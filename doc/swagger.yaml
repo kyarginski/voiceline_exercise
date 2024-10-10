@@ -1,0 +1,285 @@
+openapi: 3.0.0
+info:
+  title: User Management API
+  description: A RESTful API for managing users with integration to Keycloak.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8087/api/v1
+    description: Test server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the user
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: The access token to be used for authorization
+        refresh_token:
+          type: string
+          description: The refresh token to get new access tokens
+        expires_in:
+          type: integer
+          description: Time in seconds until the access token expires
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+paths:
+  /users:
+    post:
+      summary: Create a new user and register in Keycloak
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - first_name
+                - last_name
+                - email
+                - password
+      responses:
+        '201':
+          description: User created and registered in Keycloak successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request payload
+        '500':
+          description: Error registering user in Keycloak
+
+    get:
+      summary: List all users with pagination
+      operationId: listUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of users per page
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid query parameters
+        '401':
+          description: Unauthorized. Missing or invalid token.
+
+  /users/{id}:
+    get:
+      summary: Retrieve user details by ID
+      operationId: getUserById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized. Missing or invalid token.
+
+    put:
+      summary: Update user information by ID
+      operationId: updateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+              required:
+                - first_name
+                - last_name
+                - email
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized. Missing or invalid token.
+
+    delete:
+      summary: Delete a user by ID
+      operationId: deleteUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized. Missing or invalid token.
+
+  /auth/login:
+    post:
+      summary: Authenticate user and get access token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request payload
+        '401':
+          description: Invalid username or password
+      description: |
+        This endpoint authenticates a user with the provided username and password.
+        If the credentials are valid, it returns an access token and a refresh token.
+
+  /auth/logout:
+    post:
+      summary: Logout user and invalidate token
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: User logged out successfully
+        '401':
+          description: Unauthorized. Missing or invalid token.
+      description: |
+        This endpoint logs out a user and invalidates their access token.
+        Requires a valid JWT token to log out.
+
+  /auth/refresh:
+    post:
+      summary: Refresh the access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid refresh token
+        '401':
+          description: Unauthorized. Invalid or expired token.
+      description: |
+        This endpoint refreshes an access token using a valid refresh token.

@@ -1,0 +1,12 @@
+env: "prod"
+version: "1.0.0"
+db_connect: "host=host.docker.internal port=25432 dbname=keycloak user=keycloak password=password client_encoding=UTF8 sslmode=disable"
+port: 8087
+use_tracing: true
+tracing_address: "http://host.docker.internal:14268/api/traces"
+
+keycloak:
+  server: http://host.docker.internal:8403/
+  realm: master
+  client_secret: A1GpPrwmld784l9dpMNI7oEMZzdkivMh
+  client_id: myapp
