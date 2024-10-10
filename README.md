@@ -5,7 +5,7 @@ VoiceLine exercise.
 
 The VoiceLine application can be built using the following technologies:
 
-![Schema1.png](Doc/Schema1.drawio.png)
+![Schema1.png](doc/Schema1.drawio.png)
 
 Main system blocks:
 - **Frontend** - The user interface that interacts with the user (Mobile, Desktop, Web etc).
